@@ -17,6 +17,13 @@ async function connectToDatabase() {
     throw new Error('Please define the MONGODB_URI environment variable inside .env');
   }
 
+  const placeholderMatch = MONGODB_URI.match(/<[^>]+>/);
+  if (placeholderMatch) {
+    const placeholder = placeholderMatch[0];
+    console.error(`[MONGODB_ERROR] MONGODB_URI contains unfilled placeholder: ${placeholder}`);
+    throw new Error(`MONGODB_URI appears to contain an unfilled placeholder (found '${placeholder}') — check your environment variable value`);
+  }
+
   const readyState = mongoose.connection.readyState;
 
   // 1 = connected: Return existing active connection
