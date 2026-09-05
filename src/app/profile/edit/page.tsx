@@ -70,12 +70,17 @@ export default function EditProfilePage() {
       queryClient.invalidateQueries({ queryKey: ['user'] });
       
       if (update) {
+        const safeAvatar = (formData.image && (formData.image.startsWith("data:") || formData.image.length > 200))
+          ? `/api/users/${user?.id || formData.id}/avatar`
+          : (formData.image || null);
+
         update({
           name: formData.name,
-          image: formData.image || null,
+          image: safeAvatar,
           username: formData.username
         });
       }
+
       
       toast.success('Profile updated successfully!');
       setIsDirty(false);
