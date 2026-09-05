@@ -5,9 +5,9 @@ import dbConnect from '@/lib/db';
 import Chat from '@/models/Chat';
 import Message from '@/models/Message';
 import User from '@/models/User';
-import mongoose from 'mongoose';
 
-export async function GET(req: Request) {
+export async function GET() {
+
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {

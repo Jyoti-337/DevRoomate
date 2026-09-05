@@ -16,23 +16,23 @@ export default function FilterBar() {
   const searchParams = useSearchParams();
   
   const { search, availability, timezone, projectType, tags, setFilter, toggleTag, clearAll } = useFilterStore();
-  const [localSearch, setLocalSearch] = useState(search);
+  const urlSearch = searchParams.get('search');
+  const [localSearch, setLocalSearch] = useState(urlSearch || search);
 
   // Initialize Zustand from URL on mount
   useEffect(() => {
-    const urlSearch = searchParams.get('search');
     const urlAvailability = searchParams.get('availability');
     const urlTimezone = searchParams.get('timezone');
     const urlProjectType = searchParams.get('projectType');
     
     if (urlSearch) {
       setFilter('search', urlSearch);
-      setLocalSearch(urlSearch);
     }
     if (urlAvailability) setFilter('availability', urlAvailability);
     if (urlTimezone) setFilter('timezone', urlTimezone);
     if (urlProjectType) setFilter('projectType', urlProjectType);
   }, []);
+
 
   // Sync URL when Zustand changes
   useEffect(() => {

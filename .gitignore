@@ -38,8 +38,12 @@ yarn-error.log*
 
 # local mongodb data
 /data/
+/tmp/
+*.log*
+eslint_out.txt
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
 

@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import connectToDatabase from "@/lib/db";
 import CollabRequest from "@/models/CollabRequest";
-import User from "@/models/User";
+
 
 export async function PATCH(
   req: Request,

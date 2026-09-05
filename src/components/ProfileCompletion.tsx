@@ -11,12 +11,8 @@ interface ProfileCompletionProps {
 }
 
 export default function ProfileCompletion({ user }: ProfileCompletionProps) {
-  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Calculate completion
   const fields = [
@@ -65,8 +61,9 @@ export default function ProfileCompletion({ user }: ProfileCompletionProps) {
         <motion.div 
           className="bg-gradient-to-r from-[#00E5FF] to-[#FF2BD6] h-2.5 rounded-full"
           initial={{ width: 0 }}
-          animate={{ width: mounted ? `${score}%` : 0 }}
+          animate={{ width: `${score}%` }}
           transition={{ duration: 1, ease: "easeOut" }}
+
         />
       </div>
 

@@ -6,9 +6,9 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogOut, User, LayoutDashboard, Settings, Bell, Loader2, PlusCircle, MessageSquare } from "lucide-react";
-import UserAvatar from "./UserAvatar";
 import { toast } from "sonner";
 import Image from "next/image";
+
 
 export default function Navbar() {
   const { data: session } = useSession();

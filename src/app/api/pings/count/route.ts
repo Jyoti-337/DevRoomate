@@ -4,7 +4,8 @@ import { authOptions } from '@/lib/auth'; // Ensure this path matches the projec
 import connectToDatabase from '@/lib/db';
 import Ping from '@/models/Ping';
 
-export async function GET(req: Request) {
+export async function GET() {
+
   try {
     const session = await getServerSession(authOptions);
     

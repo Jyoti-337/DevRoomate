@@ -10,22 +10,20 @@ interface TiltCardProps {
   onClick?: (e: React.MouseEvent) => void;
 }
 
+const isFinePointer = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
+  !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 export default function TiltCard({ children, className = "", maxTilt = 10, onClick }: TiltCardProps) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [spotlightPos, setSpotlightPos] = useState({ x: 50, y: 50, opacity: 0 });
-  const [isDisabled, setIsDisabled] = useState(true);
 
   const rotateX = useSpring(0, { stiffness: 300, damping: 20 });
   const rotateY = useSpring(0, { stiffness: 300, damping: 20 });
 
-  useEffect(() => {
-    const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setIsDisabled(!finePointer || reducedMotion);
-  }, []);
-
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isDisabled || !cardRef.current) return;
+    if (!cardRef.current || !isFinePointer()) return;
 
     const rect = cardRef.current.getBoundingClientRect();
     const width = rect.width;
@@ -49,18 +47,20 @@ export default function TiltCard({ children, className = "", maxTilt = 10, onCli
   };
 
   const handleMouseLeave = () => {
-    if (isDisabled) return;
+    if (!isFinePointer()) return;
     setSpotlightPos((prev) => ({ ...prev, opacity: 0 }));
     rotateX.set(0);
     rotateY.set(0);
   };
+
+  const enabled = isFinePointer();
 
   return (
     <motion.div
       ref={cardRef}
       onClick={onClick}
       style={
-        isDisabled
+        !enabled
           ? {}
           : {
               rotateX,
@@ -73,8 +73,8 @@ export default function TiltCard({ children, className = "", maxTilt = 10, onCli
       onMouseLeave={handleMouseLeave}
       className={`relative overflow-hidden ${className}`}
     >
-      {/* Dynamic Cursor Radial Emerald Spotlight Glow */}
-      {!isDisabled && (
+      {/* Dynamic Cursor Radial Spotlight Glow */}
+      {enabled && (
         <div
           className="pointer-events-none absolute inset-0 transition-opacity duration-300 z-10"
           style={{
@@ -88,3 +88,4 @@ export default function TiltCard({ children, className = "", maxTilt = 10, onCli
     </motion.div>
   );
 }
+
