@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import { developers } from '@/data/developers';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
+
 
 export async function GET(req: NextRequest) {
   try {
