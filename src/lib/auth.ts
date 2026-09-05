@@ -20,7 +20,7 @@ export const authOptions: NextAuthOptions = {
         try {
           await connectToDatabase();
         } catch (dbErr: any) {
-          console.error("AUTH_DB_ERROR:", dbErr);
+          console.error("AUTH_DB_ERROR details:", dbErr?.name, dbErr?.message, dbErr?.code, dbErr?.stack);
           throw new Error("Service temporarily unavailable. Database connection failed.");
         }
 
@@ -28,9 +28,10 @@ export const authOptions: NextAuthOptions = {
         try {
           user = await User.findOne({ email: credentials.email });
         } catch (queryErr: any) {
-          console.error("AUTH_QUERY_ERROR:", queryErr);
+          console.error("AUTH_QUERY_ERROR details:", queryErr?.name, queryErr?.message, queryErr?.code, queryErr?.stack);
           throw new Error("Service temporarily unavailable. Database query failed.");
         }
+
 
         if (!user || !user.password) {
           throw new Error("Invalid credentials or user not found.");

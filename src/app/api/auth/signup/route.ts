@@ -54,8 +54,9 @@ export async function POST(req: Request) {
 
     return NextServerResponse.json(user, { status: 201 });
   } catch (error: any) {
-    console.error("REGISTRATION_ERROR", error);
+    console.error("REGISTRATION_ERROR details:", error?.name, error?.message, error?.code, error?.stack);
     if (
+
       error?.name === 'MongooseServerSelectionError' || 
       error?.code === 'ECONNREFUSED' || 
       error?.message?.includes('ECONNREFUSED') ||

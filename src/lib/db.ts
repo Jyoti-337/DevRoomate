@@ -1,8 +1,7 @@
 import mongoose from 'mongoose';
 
 /**
- * Global is used here to maintain a cached connection across hot reloads in development.
- * This prevents connections growing exponentially during API Route usage.
+ * Global cache across hot-reloads in development / warm lambdas in serverless.
  */
 let cached = (global as any).mongoose;
 
@@ -14,6 +13,7 @@ async function connectToDatabase() {
   const MONGODB_URI = process.env.MONGODB_URI;
 
   if (!MONGODB_URI) {
+    console.error("[MONGODB_ERROR] MONGODB_URI is not defined in process.env!");
     throw new Error('Please define the MONGODB_URI environment variable inside .env');
   }
 
@@ -29,7 +29,8 @@ async function connectToDatabase() {
     try {
       cached.conn = await cached.promise;
       return cached.conn;
-    } catch (err) {
+    } catch (err: any) {
+      console.error("[MONGODB_CONNECT_RETRY_FAIL]", err?.name, err?.message);
       cached.promise = null;
       cached.conn = null;
       throw err;
@@ -42,20 +43,22 @@ async function connectToDatabase() {
     cached.promise = null;
 
     const opts = {
-      bufferCommands: true,
-      serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 5000,
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 10000,
+      connectTimeoutMS: 10000,
       maxPoolSize: 10,
-      minPoolSize: 2,
+      minPoolSize: 0,
       socketTimeoutMS: 45000,
     };
 
     cached.promise = mongoose
       .connect(MONGODB_URI, opts)
       .then((mongooseInstance) => {
+        console.log("[MONGODB_CONNECT_SUCCESS] Connected to MongoDB");
         return mongooseInstance;
       })
-      .catch((err) => {
+      .catch((err: any) => {
+        console.error("[MONGODB_CONNECT_FAIL]", err?.name, err?.message, err?.code);
         cached.promise = null;
         cached.conn = null;
         throw err;
@@ -65,7 +68,8 @@ async function connectToDatabase() {
   try {
     cached.conn = await cached.promise;
     return cached.conn;
-  } catch (e) {
+  } catch (e: any) {
+    console.error("[MONGODB_AWAIT_FAIL]", e?.name, e?.message);
     cached.promise = null;
     cached.conn = null;
     throw e;
