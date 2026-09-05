@@ -3,8 +3,6 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import connectToDatabase from "@/lib/db";
 import User from "@/models/User";
-import fs from "fs";
-import path from "path";
 
 export async function POST(req: Request) {
   try {
@@ -37,38 +35,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Ensure uploads directory exists
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
-    // Create unique filename
-    const ext = file.type.split("/")[1] || "jpg";
-    const filename = `${user._id.toString()}-${Date.now()}.${ext}`;
-    const filePath = path.join(uploadsDir, filename);
-
-    // Save file
+    // Serverless Compatible: Convert compressed image to Base64 Data URL
+    // Prevents EROFS (read-only filesystem) errors on Vercel Lambda without requiring external API keys
     const buffer = Buffer.from(await file.arrayBuffer());
-    await fs.promises.writeFile(filePath, buffer);
+    const mimeType = file.type || "image/jpeg";
+    const base64Data = buffer.toString("base64");
+    const dataUrl = `data:${mimeType};base64,${base64Data}`;
 
-    // Cleanup old custom upload if it exists
-    if (user.avatar && user.avatar.startsWith("/uploads/")) {
-      const oldFilePath = path.join(process.cwd(), "public", user.avatar);
-      if (fs.existsSync(oldFilePath)) {
-        try {
-          fs.unlinkSync(oldFilePath);
-        } catch (e) {
-          console.error("Failed to delete older avatar file:", e);
-        }
-      }
-    }
-
-    const imagePath = `/uploads/${filename}`;
-    user.avatar = imagePath;
+    user.avatar = dataUrl;
     await user.save();
 
-    return NextResponse.json({ success: true, avatar: imagePath });
+    return NextResponse.json({ success: true, avatar: dataUrl });
   } catch (error: any) {
     console.error("Upload route error:", error);
     return NextResponse.json({ error: "Failed to upload image", details: error.message }, { status: 500 });
@@ -86,18 +63,6 @@ export async function DELETE() {
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    // Delete custom uploaded file from disk if it exists
-    if (user.avatar && user.avatar.startsWith("/uploads/")) {
-      const oldFilePath = path.join(process.cwd(), "public", user.avatar);
-      if (fs.existsSync(oldFilePath)) {
-        try {
-          fs.unlinkSync(oldFilePath);
-        } catch (e) {
-          console.error("Failed to delete user avatar file:", e);
-        }
-      }
     }
 
     user.avatar = undefined;
