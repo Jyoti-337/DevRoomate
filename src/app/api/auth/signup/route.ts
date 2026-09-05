@@ -56,18 +56,22 @@ export async function POST(req: Request) {
     return NextServerResponse.json(user, { status: 201 });
   } catch (error: any) {
     console.error("REGISTRATION_ERROR details:", error?.name, error?.message, error?.code, error?.stack);
-    if (
-
+    const isDbError = 
       error?.name === 'MongooseServerSelectionError' || 
       error?.code === 'ECONNREFUSED' || 
       error?.message?.includes('ECONNREFUSED') ||
-      error?.message?.includes('buffering timed out')
-    ) {
-      return NextServerResponse.json(
-        { message: "Service temporarily unavailable. Database connection could not be established." },
-        { status: 503 }
-      );
-    }
-    return NextServerResponse.json({ message: error?.message || "Registration failed. Please try again." }, { status: 500 });
+      error?.message?.includes('buffering timed out') ||
+      error?.message?.includes('MONGODB_URI');
+
+    return NextServerResponse.json(
+      { 
+        message: `Database connection error: ${error?.name || 'Error'} - ${error?.message || 'Unknown error'}`,
+        errorName: error?.name,
+        errorMessage: error?.message,
+        errorCode: error?.code
+      },
+      { status: 500 }
+    );
   }
 }
+
