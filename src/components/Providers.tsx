@@ -1,5 +1,6 @@
 "use client";
 
+import "@/lib/env-init";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "react-hot-toast";
 import { Toaster as SonnerToaster } from "sonner";
