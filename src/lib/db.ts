@@ -44,8 +44,8 @@ async function connectToDatabase() {
 
     const opts = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 10000,
-      connectTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 15000, // 15 seconds for serverless cold starts & Atlas discovery
+      connectTimeoutMS: 15000,
       maxPoolSize: 10,
       minPoolSize: 0,
       socketTimeoutMS: 45000,
@@ -54,11 +54,15 @@ async function connectToDatabase() {
     cached.promise = mongoose
       .connect(MONGODB_URI, opts)
       .then((mongooseInstance) => {
-        console.log("[MONGODB_CONNECT_SUCCESS] Connected to MongoDB");
+        console.log("[MONGODB_CONNECT_SUCCESS] Connected to MongoDB Atlas");
         return mongooseInstance;
       })
       .catch((err: any) => {
-        console.error("[MONGODB_CONNECT_FAIL]", err?.name, err?.message, err?.code);
+        if (err?.name === 'MongooseServerSelectionError' || err?.message?.includes('whitelisted')) {
+          console.error("[ATLAS_IP_WHITELIST_ERROR] Atlas connection rejected! Ensure 0.0.0.0/0 (Allow Access from Anywhere) is ACTIVE in Atlas -> Security -> Network Access.");
+        } else {
+          console.error("[MONGODB_CONNECT_FAIL]", err?.name, err?.message, err?.code);
+        }
         cached.promise = null;
         cached.conn = null;
         throw err;
@@ -69,7 +73,6 @@ async function connectToDatabase() {
     cached.conn = await cached.promise;
     return cached.conn;
   } catch (e: any) {
-    console.error("[MONGODB_AWAIT_FAIL]", e?.name, e?.message);
     cached.promise = null;
     cached.conn = null;
     throw e;
