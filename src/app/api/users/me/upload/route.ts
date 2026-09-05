@@ -35,8 +35,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Serverless Compatible: Convert compressed image to Base64 Data URL
-    // Prevents EROFS (read-only filesystem) errors on Vercel Lambda without requiring external API keys
+    // Convert compressed image to Base64 Data URL for MongoDB storage only
     const buffer = Buffer.from(await file.arrayBuffer());
     const mimeType = file.type || "image/jpeg";
     const base64Data = buffer.toString("base64");
@@ -45,7 +44,11 @@ export async function POST(req: Request) {
     user.avatar = dataUrl;
     await user.save();
 
-    return NextResponse.json({ success: true, avatar: dataUrl });
+    // CRITICAL: Always return a short proxy URL string (/api/users/[id]/avatar), NEVER the raw Base64 data string!
+    // Prevents client session / JWT cookie from inflating to >4KB and triggering HTTP 494 REQUEST_HEADER_TOO_LARGE.
+    const avatarProxyUrl = `/api/users/${user._id.toString()}/avatar`;
+
+    return NextResponse.json({ success: true, avatar: avatarProxyUrl });
   } catch (error: any) {
     console.error("Upload route error:", error);
     return NextResponse.json({ error: "Failed to upload image", details: error.message }, { status: 500 });

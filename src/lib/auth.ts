@@ -6,12 +6,13 @@ import connectToDatabase from "@/lib/db";
 import User from "@/models/User";
 
 function sanitizeAvatarUrl(userId: string, avatar?: string | null): string {
-  if (!avatar) {
+  if (!avatar || typeof avatar !== "string") {
     return `/api/users/${userId}/avatar`;
   }
-  // CRITICAL SECURITY SAFEGUARD: Never store Base64 Data URLs (data:image/...) in NextAuth JWT session cookie!
-  // Prevents HTTP 494 REQUEST_HEADER_TOO_LARGE cookie header size overflow.
-  if (avatar.startsWith("data:") || avatar.length > 200) {
+  // STRUCTURAL SAFEGUARD: Never store Base64 Data URLs (data:image/...) or strings > 150 chars in NextAuth JWT!
+  // Prevents HTTP 494 REQUEST_HEADER_TOO_LARGE cookie size overflow.
+  if (avatar.startsWith("data:") || avatar.length > 150) {
+    console.warn(`[NEXTAUTH_JWT_GUARD] Oversized image string (${avatar.length} chars) sanitized to proxy URL for user ${userId}`);
     return `/api/users/${userId}/avatar`;
   }
   return avatar;
@@ -82,17 +83,30 @@ export const authOptions: NextAuthOptions = {
         token.username = user.username;
         token.image = sanitizeAvatarUrl(user.id, user.image);
       }
+
       if (trigger === "update" && session) {
         if (session.name && typeof session.name === "string") {
-          token.name = session.name.slice(0, 100);
+          token.name = session.name.slice(0, 60);
         }
         if (session.username && typeof session.username === "string") {
-          token.username = session.username.slice(0, 50);
+          token.username = session.username.slice(0, 30);
         }
         if (session.image !== undefined) {
           token.image = sanitizeAvatarUrl(token.id as string, session.image);
         }
       }
+
+      // Hard safeguard: Sanitize and enforce maximum field lengths for all JWT payload fields
+      token.id = String(token.id || "").slice(0, 50);
+      token.name = String(token.name || "").slice(0, 60);
+      token.email = String(token.email || "").slice(0, 80);
+      token.role = String(token.role || "").slice(0, 30);
+      token.username = String(token.username || "").slice(0, 30);
+      token.image = sanitizeAvatarUrl(token.id as string, token.image as string);
+
+      const tokenPayloadSize = JSON.stringify(token).length;
+      console.log(`[NEXTAUTH_JWT_PAYLOAD_SIZE] Token size: ${tokenPayloadSize} bytes (Max target: < 500 bytes).`);
+
       return token;
     },
     async session({ session, token }: any) {
